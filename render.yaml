@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: eggsquisitos-app
+    env: python
+    plan: starter   # Este es el plan de pago (24/7)
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production

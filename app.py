@@ -39,7 +39,8 @@ def ver_pedidos():
 
 @app.route('/historial')
 def historial():
-    return render_template("historial.html", pedidos=entregados)
+    entregados_ordenados = sorted(entregados, key=lambda p: datetime.strptime(p["fecha_entrega"], "%d/%m/%Y %H:%M"), reverse=True)
+    return render_template("historial.html", pedidos=entregados_ordenados)
 
 @app.route('/pedido', methods=['POST'])
 def hacer_pedido():
