@@ -66,12 +66,13 @@
 
           <ul>
             {% for item, cantidad in pedido.conteo.items() %}
-              <li>
-              {% if pedido.huevos and item in pedido.huevos %}
-  - <em>{{ pedido.huevos[item] | join(', ') }}</em>
-{% endif %}
+           <li>
+  {{ item }} x {{ cantidad }}
+  {% if pedido.huevos and item in pedido.huevos %}
+    - <em>{{ pedido.huevos[item] | join(', ') }}</em>
+  {% endif %}
+</li>
 
-              </li>
             {% endfor %}
           </ul>
 
@@ -117,14 +118,13 @@
   setInterval(actualizarCronometros, 1000);
   window.onload = actualizarCronometros;
 </script>
-
-</body>
 <script>
   setInterval(() => {
     location.reload();
-  }, 30000); // 30000 milisegundos = 30 segundos
+  }, 10000); // 30000 milisegundos = 30 segundos
 </script>
 
+</body>
 </html>
 
 
