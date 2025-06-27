@@ -45,29 +45,57 @@ def online():
 
 @app.route('/pedido', methods=['POST'])
 def hacer_pedido():
-    # ...
+    # Obtener tipo de pedido
+    tipo_pedido = request.form.get('tipo_pedido', 'presencial')
+
+    # Obtener notas
+    notas = request.form.get('notas', '').strip()
+
+    # Obtener tiempo_entrega solo si es online
     tiempo_entrega = request.form.get('tiempo_entrega', '').strip()
     tiempo_entrega_segundos = None
 
     if tipo_pedido == "online":
         try:
+            # Suponiendo que el campo tiempo_entrega es un número en minutos
             minutos = int(tiempo_entrega)
             tiempo_entrega_segundos = minutos * 60
         except:
             tiempo_entrega_segundos = None
 
+    # Obtener los items seleccionados y cantidades
+    # Los checkbox "item" pueden venir varios, se usan getlist
+    items_seleccionados = request.form.getlist('item')
+
+    conteo = defaultdict(int)
+    huevos = defaultdict(list)
+    total = 0
+
+    for item in items_seleccionados:
+        cantidad = request.form.get(f'cantidad_{item}', '1')
+        try:
+            cantidad = int(cantidad)
+        except:
+            cantidad = 1
+        conteo[item] += cantidad
+        total += menu.get(item, 0) * cantidad
+
+        # Recoger tipos de huevo si aplica
+        if item in platillos_con_huevo:
+            # Los select de huevos vienen con nombre huevo_item[]
+            huevos_item = request.form.getlist(f'huevo_{item}[]')
+            huevos[item].extend(huevos_item)
+
     pedido = {
-        #...
-        "timestamp": int(time.time()) if tipo_pedido == "online" else None,
-        "tiempo_entrega_segundos": tiempo_entrega_segundos
         "id": len(pendientes) + len(entregados) + 1,
-        "conteo": conteo,
+        "conteo": dict(conteo),
         "notas": notas,
         "huevos": dict(huevos),
         "total": total,
         "hora": datetime.now().strftime("%H:%M:%S"),
         "tipo": tipo_pedido,
         "tiempo_entrega": tiempo_entrega if tipo_pedido == "online" else None,
+        "tiempo_entrega_segundos": tiempo_entrega_segundos,
         "timestamp": int(time.time()) if tipo_pedido == "online" else None
     }
 
@@ -83,3 +111,6 @@ def marcar_entregado(pedido_id):
             entregados.append(pedido)
             break
     return redirect('/')
+
+if __name__ == '__main__':
+    app.run(debug=True)
