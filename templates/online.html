@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pedido Online</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script>
+    function updateHuevos(item) {
+      const cantidad = parseInt(document.getElementById(`cantidad_${item}`).value) || 1;
+      const huevoContainer = document.getElementById(`huevos_${item}`);
+      huevoContainer.innerHTML = '';
+
+      for (let i = 1; i <= cantidad; i++) {
+        const select = document.createElement('select');
+        select.name = `huevo_${item}[]`;
+        select.className = 'form-select w-auto my-1';
+
+        const opciones = ["", "H.Rev", "H.T", "H.M", "H.C"];  
+        opciones.forEach(valor => {
+          const opt = document.createElement('option');
+          opt.value = valor;
+          opt.text = valor || 'Tipo de huevo';
+          select.appendChild(opt);
+        });
+
+        huevoContainer.appendChild(select);
+      }
+    }
+  </script>
+</head>
+<body class="p-4">
+  <h1 class="mb-4">📦 Nueva Comanda Online</h1>
+  <a href="/" class="btn btn-secondary mb-3">⬅️ Volver a Por Entregar</a>
+
+  <form action="/pedido" method="post">
+    <input type="hidden" name="tipo_pedido" value="online">
+    
+    <div class="mb-3">
+      <label for="tiempo_entrega" class="form-label">⏰ Tiempo estimado para recoger:</label>
+      <input type="text" name="tiempo_entrega" id="tiempo_entrega" class="form-control" placeholder="Ej. 20 minutos, 1 hora...">
+    </div>
+
+    <h3>Platillos disponibles:</h3>
+    {% for item in menu %}
+      <div class="mb-3 border rounded p-2">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="item" value="{{ item }}" id="{{ item }}">
+          <label class="form-check-label" for="{{ item }}">
+            {{ item }} - ${{ menu[item] }} MXN
+          </label>
+        </div>
+
+        <div class="mt-2 d-flex align-items-center gap-3">
+          <label for="cantidad_{{ item }}" class="form-label m-0">Cantidad:</label>
+          <input type="number" name="cantidad_{{ item }}" id="cantidad_{{ item }}" min="1" max="10" value="1" class="form-control w-auto" onchange="updateHuevos('{{ item }}')" />
+        </div>
+
+        {% if item in huevo_menu %}
+          <div id="huevos_{{ item }}" class="mt-2"></div>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              updateHuevos('{{ item }}');
+            });
+          </script>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="mb-3 mt-4">
+      <label for="notas" class="form-label">📝 Especificaciones del pedido:</label>
+      <textarea name="notas" class="form-control" rows="2" placeholder="Ej. Sin cebolla, extra tocino..."></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">✅ Enviar Comanda Online</button>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

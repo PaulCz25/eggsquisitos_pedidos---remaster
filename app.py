@@ -1,14 +1,13 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime
 from collections import defaultdict
+import time
 
 app = Flask(__name__)
 
-# Pedidos globales
 pendientes = []
 entregados = []
 
-# Menú con precios
 menu = {
     "Slam": 150,
     "Hotcakes": 70,
@@ -26,7 +25,6 @@ menu = {
     "Kid Cheese": 95
 }
 
-# Platillos que requieren tipo de huevo
 platillos_con_huevo = ["Slam", "Americano", "French Plate", "Mini", "2x2"]
 
 @app.route('/')
@@ -39,13 +37,18 @@ def ver_pedidos():
 
 @app.route('/historial')
 def historial():
-    entregados_ordenados = sorted(entregados, key=lambda p: datetime.strptime(p["fecha_entrega"], "%d/%m/%Y %H:%M"), reverse=True)
-    return render_template("historial.html", pedidos=entregados_ordenados)
+    return render_template("historial.html", pedidos=entregados)
+
+@app.route('/online')
+def online():
+    return render_template("online.html", menu=menu, huevo_menu=platillos_con_huevo)
 
 @app.route('/pedido', methods=['POST'])
 def hacer_pedido():
     items_seleccionados = request.form.getlist('item')
     notas = request.form.get('notas', '').strip()
+    tiempo_entrega = request.form.get('tiempo_entrega', '').strip()
+    tipo_pedido = request.form.get('tipo_pedido', 'local')
 
     conteo = {}
     huevos = defaultdict(list)
@@ -58,15 +61,18 @@ def hacer_pedido():
 
         if item in platillos_con_huevo:
             huevo_terminos = request.form.getlist(f'huevo_{item}[]')
-            huevos[item] = huevo_terminos[:cantidad]  # solo tomamos tantos como cantidad
+            huevos[item] = huevo_terminos[:cantidad]
 
     pedido = {
         "id": len(pendientes) + len(entregados) + 1,
         "conteo": conteo,
         "notas": notas,
-        "huevos": dict(huevos),  # diccionario con listas de tipo de huevo
+        "huevos": dict(huevos),
         "total": total,
-        "hora": datetime.now().strftime("%H:%M:%S")
+        "hora": datetime.now().strftime("%H:%M:%S"),
+        "tipo": tipo_pedido,
+        "tiempo_entrega": tiempo_entrega if tipo_pedido == "online" else None,
+        "timestamp": int(time.time()) if tipo_pedido == "online" else None
     }
 
     pendientes.append(pedido)
@@ -81,5 +87,3 @@ def marcar_entregado(pedido_id):
             entregados.append(pedido)
             break
     return redirect('/')
-
-
