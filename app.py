@@ -45,25 +45,21 @@ def online():
 
 @app.route('/pedido', methods=['POST'])
 def hacer_pedido():
-    items_seleccionados = request.form.getlist('item')
-    notas = request.form.get('notas', '').strip()
+    # ...
     tiempo_entrega = request.form.get('tiempo_entrega', '').strip()
-    tipo_pedido = request.form.get('tipo_pedido', 'local')
+    tiempo_entrega_segundos = None
 
-    conteo = {}
-    huevos = defaultdict(list)
-    total = 0
-
-    for item in items_seleccionados:
-        cantidad = int(request.form.get(f'cantidad_{item}', 1))
-        conteo[item] = cantidad
-        total += menu[item] * cantidad
-
-        if item in platillos_con_huevo:
-            huevo_terminos = request.form.getlist(f'huevo_{item}[]')
-            huevos[item] = huevo_terminos[:cantidad]
+    if tipo_pedido == "online":
+        try:
+            minutos = int(tiempo_entrega)
+            tiempo_entrega_segundos = minutos * 60
+        except:
+            tiempo_entrega_segundos = None
 
     pedido = {
+        #...
+        "timestamp": int(time.time()) if tipo_pedido == "online" else None,
+        "tiempo_entrega_segundos": tiempo_entrega_segundos
         "id": len(pendientes) + len(entregados) + 1,
         "conteo": conteo,
         "notas": notas,

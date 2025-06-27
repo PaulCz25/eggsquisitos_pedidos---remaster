@@ -36,8 +36,9 @@
     <input type="hidden" name="tipo_pedido" value="online">
     
     <div class="mb-3">
-      <label for="tiempo_entrega" class="form-label">⏰ Tiempo estimado para recoger:</label>
-      <input type="text" name="tiempo_entrega" id="tiempo_entrega" class="form-control" placeholder="Ej. 20 minutos, 1 hora...">
+<label for="tiempo_entrega" class="form-label">⏰ Tiempo estimado para recoger (minutos):</label>
+<input type="number" name="tiempo_entrega" id="tiempo_entrega" class="form-control" placeholder="Ej. 20" min="1" required>
+
     </div>
 
     <h3>Platillos disponibles:</h3>
