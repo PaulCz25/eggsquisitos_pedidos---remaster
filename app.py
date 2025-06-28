@@ -22,49 +22,67 @@ menu = {
     "Mini": 95,
     "Chilaquiles": 125,
     "Chilaquiles Deluxe": 150,
-    "Kid Cheese": 95
+    "Kid Cheese": 95,
+    # Bebidas agregadas aquí para total correcto
+    "Cafe Americano 12Oz": 35,
+    "Cafe Americano 16Oz": 45,
+    "Licuado Fresa": 65,
+    "Licuado Platano": 65,
+    "Licuado Platano-Fresa": 65,
+    "Licuado Platano-Choco": 65,
+    "Licuado Chocomil": 55,
+    "Jugo de naranja": 65,
+    "Jugo verde": 65,
+    "Soda": 35
 }
 
-platillos_con_huevo = ["Slam", "Americano", "French Plate", "Mini", "2x2"]
+platillos_con_huevo = ["Slam", "Americano", "French Plate", "Mini", "2x2", "Chilaquiles", "Chilaquiles Deluxe"]
+
 
 @app.route('/')
 def por_entregar():
-    return render_template("por_entregar.html", pedidos=pendientes)
+    pendientes_ordenados = sorted(pendientes, key=lambda x: x["timestamp"] or 0)
+    return render_template("por_entregar.html", pedidos=pendientes_ordenados)
+
 
 @app.route('/pedidos')
 def ver_pedidos():
-    return render_template("pedidos.html", menu=menu, huevo_menu=platillos_con_huevo)
+    # Se pasa el menu sin bebidas para pedidos (presenciales)
+    # pero si quieres que incluyan bebidas, añade las bebidas acá también.
+    # Para que concuerde con la ventana pedidos, excluyo bebidas aquí:
+    menu_platillos = {k: v for k, v in menu.items() if k not in [
+        "Cafe Americano 12Oz", "Cafe Americano 16Oz", "Licuado Fresa", "Licuado Platano",
+        "Licuado Platano-Fresa", "Licuado Platano-Choco", "Licuado Chocomil", "Jugo de naranja",
+        "Jugo verde", "Soda"]}
+    return render_template("pedidos.html", menu=menu_platillos, huevo_menu=platillos_con_huevo)
+
 
 @app.route('/historial')
 def historial():
-    return render_template("historial.html", pedidos=entregados)
+    entregados_ordenados = sorted(entregados, key=lambda x: x.get("fecha_entrega", ""), reverse=True)
+    return render_template("historial.html", pedidos=entregados_ordenados)
+
 
 @app.route('/online')
 def online():
+    # En online usamos todo el menu (incluyendo bebidas)
     return render_template("online.html", menu=menu, huevo_menu=platillos_con_huevo)
+
 
 @app.route('/pedido', methods=['POST'])
 def hacer_pedido():
-    # Obtener tipo de pedido
     tipo_pedido = request.form.get('tipo_pedido', 'presencial')
-
-    # Obtener notas
     notas = request.form.get('notas', '').strip()
-
-    # Obtener tiempo_entrega solo si es online
     tiempo_entrega = request.form.get('tiempo_entrega', '').strip()
     tiempo_entrega_segundos = None
 
     if tipo_pedido == "online":
         try:
-            # Suponiendo que el campo tiempo_entrega es un número en minutos
             minutos = int(tiempo_entrega)
             tiempo_entrega_segundos = minutos * 60
         except:
             tiempo_entrega_segundos = None
 
-    # Obtener los items seleccionados y cantidades
-    # Los checkbox "item" pueden venir varios, se usan getlist
     items_seleccionados = request.form.getlist('item')
 
     conteo = defaultdict(int)
@@ -80,9 +98,7 @@ def hacer_pedido():
         conteo[item] += cantidad
         total += menu.get(item, 0) * cantidad
 
-        # Recoger tipos de huevo si aplica
         if item in platillos_con_huevo:
-            # Los select de huevos vienen con nombre huevo_item[]
             huevos_item = request.form.getlist(f'huevo_{item}[]')
             huevos[item].extend(huevos_item)
 
@@ -102,6 +118,7 @@ def hacer_pedido():
     pendientes.append(pedido)
     return redirect('/')
 
+
 @app.route("/entregar/<int:pedido_id>", methods=["POST"])
 def marcar_entregado(pedido_id):
     for pedido in pendientes:
@@ -112,5 +129,7 @@ def marcar_entregado(pedido_id):
             break
     return redirect('/')
 
+
 if __name__ == '__main__':
     app.run(debug=True)
+
