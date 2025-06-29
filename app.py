@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime
-from collections import defaultdict
+from collections import defaultdict, Counter
 import time
 
 app = Flask(__name__)
@@ -23,7 +23,6 @@ menu = {
     "Chilaquiles": 125,
     "Chilaquiles Deluxe": 150,
     "Kid Cheese": 95,
-    # Bebidas agregadas aquí para total correcto
     "Cafe Americano 12Oz": 35,
     "Cafe Americano 16Oz": 45,
     "Licuado Fresa": 65,
@@ -38,36 +37,55 @@ menu = {
 
 platillos_con_huevo = ["Slam", "Americano", "French Plate", "Mini", "2x2", "Chilaquiles", "Chilaquiles Deluxe"]
 
-
 @app.route('/')
 def por_entregar():
     pendientes_ordenados = sorted(pendientes, key=lambda x: x["timestamp"] or 0)
     return render_template("por_entregar.html", pedidos=pendientes_ordenados)
 
-
 @app.route('/pedidos')
 def ver_pedidos():
-    # Se pasa el menu sin bebidas para pedidos (presenciales)
-    # pero si quieres que incluyan bebidas, añade las bebidas acá también.
-    # Para que concuerde con la ventana pedidos, excluyo bebidas aquí:
     menu_platillos = {k: v for k, v in menu.items() if k not in [
         "Cafe Americano 12Oz", "Cafe Americano 16Oz", "Licuado Fresa", "Licuado Platano",
         "Licuado Platano-Fresa", "Licuado Platano-Choco", "Licuado Chocomil", "Jugo de naranja",
         "Jugo verde", "Soda"]}
     return render_template("pedidos.html", menu=menu_platillos, huevo_menu=platillos_con_huevo)
 
-
 @app.route('/historial')
 def historial():
     entregados_ordenados = sorted(entregados, key=lambda x: x.get("fecha_entrega", ""), reverse=True)
-    return render_template("historial.html", pedidos=entregados_ordenados)
 
+    pedidos_por_dia = {}
+    ganancias_por_dia = {}
+    conteo_platillos = Counter()
+    total_ganancias = 0
+    total_pedidos = len(entregados)
+
+    for pedido in entregados:
+        fecha = pedido.get("fecha_entrega", "").split(" ")[0]
+        pedidos_por_dia[fecha] = pedidos_por_dia.get(fecha, 0) + 1
+        ganancias_por_dia[fecha] = ganancias_por_dia.get(fecha, 0) + pedido["total"]
+        total_ganancias += pedido["total"]
+
+        for platillo, cantidad in pedido["conteo"].items():
+            conteo_platillos[platillo] += cantidad
+
+    pedidos_por_dia_lista = sorted(pedidos_por_dia.items())
+    ganancias_por_dia_lista = sorted(ganancias_por_dia.items())
+    platillos_mas_pedidos = conteo_platillos.most_common(10)
+
+    return render_template(
+        "historial.html",
+        pedidos=entregados_ordenados,
+        pedidos_por_dia=pedidos_por_dia_lista,
+        ganancias_por_dia=ganancias_por_dia_lista,
+        platillos_mas_pedidos=platillos_mas_pedidos,
+        total_ganancias=total_ganancias,
+        total_pedidos=total_pedidos
+    )
 
 @app.route('/online')
 def online():
-    # En online usamos todo el menu (incluyendo bebidas)
     return render_template("online.html", menu=menu, huevo_menu=platillos_con_huevo)
-
 
 @app.route('/pedido', methods=['POST'])
 def hacer_pedido():
@@ -84,7 +102,6 @@ def hacer_pedido():
             tiempo_entrega_segundos = None
 
     items_seleccionados = request.form.getlist('item')
-
     conteo = defaultdict(int)
     huevos = defaultdict(list)
     total = 0
@@ -118,7 +135,6 @@ def hacer_pedido():
     pendientes.append(pedido)
     return redirect('/')
 
-
 @app.route("/entregar/<int:pedido_id>", methods=["POST"])
 def marcar_entregado(pedido_id):
     for pedido in pendientes:
@@ -129,7 +145,5 @@ def marcar_entregado(pedido_id):
             break
     return redirect('/')
 
-
 if __name__ == '__main__':
     app.run(debug=True)
-
