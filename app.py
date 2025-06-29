@@ -31,7 +31,7 @@ menu = {
     "Licuado Platano-Fresa": 65,
     "Licuado Platano-Choco": 65,
     "Licuado Chocomil": 55,
-    "Jugo de naranja": 65,
+    "Jugo de naranja": 45,
     "Jugo verde": 65,
     "Soda": 35
 }

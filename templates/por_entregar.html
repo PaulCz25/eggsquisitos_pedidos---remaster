@@ -2,111 +2,76 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Por Entregar - Eggsquisitos</title>
+  <title>📦 Por Entregar - Eggsquisitos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet" />
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
 
-    .navbar-brand img {
-      height: 40px;
-      margin-right: 10px;
-    }
-
-    .card-body {
-      font-size: 1.3rem;
-      color: #000000;
-      letter-spacing: 0.03em;
-      line-height: 1.5;
-      position: relative;
-    }
-
-    .card-title {
-      font-weight: 700;
-      font-size: 1.5rem;
-      color: #000000;
+    .titulo-marca {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
     }
 
     .drag-handle {
-      cursor: grab;
-      font-size: 2rem;
+      cursor: move;
       user-select: none;
-      color: #666;
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      z-index: 10;
+      font-size: 1.2rem;
+      float: right;
     }
 
-    ul {
-      padding-left: 1.5rem;
+    .cronometro {
+      font-weight: bold;
     }
 
-    ul li {
-      margin-bottom: 0.5rem;
+    /* Efecto visual durante el drag */
+    .dragging {
+      opacity: 0.5;
     }
 
-    .badge.bg-info.text-dark {
-      background-color: #117a8b !important;
-      color: #fff !important;
-      font-weight: 600;
-    }
-
-    .badge.bg-warning.text-dark {
-      background-color: #e6a600 !important;
-      color: #000 !important;
-      font-weight: 600;
-    }
-
-    strong {
-      font-weight: 700;
-    }
-
-    p, ul li, span {
-      user-select: text;
-    }
-
-    .sortable-ghost {
-      opacity: 0.4;
-      background: #f0f0f0;
+    .drag-over {
+      border: 2px dashed #0d6efd;
     }
   </style>
 </head>
 <body class="bg-light text-dark">
-  <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center" href="/">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" />
-        <span class="fs-4">Eggsquisitos</span>
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="/pedidos">📝 Pedidos</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/">📦 Por entregar</a></li>
-          <li class="nav-item"><a class="nav-link" href="/historial">📚 Historial</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('online') }}">💻 Online</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">🏪 Almacén</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">⛔ Sin stock</a></li>
-        </ul>
-      </div>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="/">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" height="40" class="me-2" />
+      <span class="fs-4">Eggsquisitos</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('ver_pedidos') }}">📝 Pedidos</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('por_entregar') }}">📦 Por entregar</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('historial') }}">📚 Historial</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('online') }}">💻 Online</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">🏪 Almacén</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">⛔ Sin stock</a></li>
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <!-- CONTENIDO -->
-  <div class="container mt-4">
-    <h1 class="mb-4">Pedidos Por Entregar</h1>
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4">
+  <h1 class="mb-4">📦 Pedidos Por Entregar</h1>
 
-    {% if pedidos %}
-      <div id="lista-pedidos">
-        {% for pedido in pedidos %}
-          <div class="card mb-3 shadow-sm {% if pedido.tipo == 'online' %}border-primary{% endif %}">
+  {% if pedidos %}
+    <div id="lista-pedidos" class="row row-cols-1 row-cols-md-2 g-3">
+      {% for pedido in pedidos %}
+        <div 
+          class="col pedido-item" 
+          draggable="true" 
+          data-pedido-id="{{ pedido.id }}"
+        >
+          <div class="card h-100 shadow-sm {% if pedido.tipo == 'online' %}border-primary{% endif %}">
             <div class="card-body">
               <span class="drag-handle">☰</span>
               <h5 class="card-title">
@@ -154,77 +119,104 @@
               </form>
             </div>
           </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="alert alert-info" style="font-size: 1.3rem;">
-        No hay pedidos por entregar.
-      </div>
-    {% endif %}
-  </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info" style="font-size: 1.3rem;">
+      No hay pedidos por entregar.
+    </div>
+  {% endif %}
+</div>
 
-  <!-- LIBRERÍAS JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- CRONÓMETROS -->
-  <script>
-    function actualizarCronometros() {
-      const cronos = document.querySelectorAll('.cronometro');
-      const ahora = Math.floor(Date.now() / 1000);
-      cronos.forEach((el) => {
-        const inicio = parseInt(el.getAttribute('data-timestamp'));
-        const duracion = parseInt(el.getAttribute('data-duracion'));
-        let segundosRestantes = inicio + duracion - ahora;
-        if (segundosRestantes < 0) segundosRestantes = 0;
-        const horas = String(Math.floor(segundosRestantes / 3600)).padStart(2, '0');
-        const minutos = String(Math.floor((segundosRestantes % 3600) / 60)).padStart(2, '0');
-        const segundos = String(segundosRestantes % 60).padStart(2, '0');
-        el.textContent = `${horas}:${minutos}:${segundos}`;
-      });
+<script>
+  const listaPedidos = document.getElementById('lista-pedidos');
+  let draggedItem = null;
+
+  listaPedidos.addEventListener('dragstart', (e) => {
+    if(e.target.classList.contains('pedido-item')){
+      draggedItem = e.target;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedItem.dataset.pedidoId);
+      setTimeout(() => draggedItem.classList.add('dragging'), 0);
     }
+  });
 
-    setInterval(actualizarCronometros, 1000);
-    window.onload = actualizarCronometros;
-  </script>
+  listaPedidos.addEventListener('dragend', (e) => {
+    if(draggedItem){
+      draggedItem.classList.remove('dragging');
+      draggedItem = null;
+    }
+  });
 
-  <!-- DRAG AND DROP -->
-  <script>
-    new Sortable(document.getElementById('lista-pedidos'), {
-      animation: 150,
-      handle: '.drag-handle',
-      ghostClass: 'sortable-ghost'
-    });
-  </script>
+  listaPedidos.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(listaPedidos, e.clientY);
+    const dragging = document.querySelector('.dragging');
+    if(afterElement == null){
+      listaPedidos.appendChild(dragging);
+    } else {
+      listaPedidos.insertBefore(dragging, afterElement);
+    }
+  });
 
-  <script>
-  let ultimoConteo = {{ pedidos|length|default(0) }};
-  const sonidoCampana = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_4a459b5cfa.mp3?filename=restaurant-bell-5-177441.mp3");
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.pedido-item:not(.dragging)')];
 
-  function checkNuevosPedidos() {
-    fetch(window.location.href, {cache: "no-cache"})
-      .then((res) => res.text())
-      .then((html) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const pedidosNuevos = doc.querySelectorAll(".card").length;
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if(offset < 0 && offset > closest.offset){
+        return { offset: offset, element: child }
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+</script>
 
-        if (pedidosNuevos > ultimoConteo) {
-          sonidoCampana.play().catch(() => {
-            // Si navegador bloquea el sonido, no pasa nada
-          });
-        }
-
-        ultimoConteo = pedidosNuevos;
-
-        const nuevoContenido = doc.querySelector(".container.mt-4").innerHTML;
-        document.querySelector(".container.mt-4").innerHTML = nuevoContenido;
-      });
+<script>
+  // Función para formatear segundos a HH:MM:SS
+  function formatoTiempo(segundos) {
+    const hrs = Math.floor(segundos / 3600).toString().padStart(2, '0');
+    const min = Math.floor((segundos % 3600) / 60).toString().padStart(2, '0');
+    const seg = Math.floor(segundos % 60).toString().padStart(2, '0');
+    return `${hrs}:${min}:${seg}`;
   }
 
-  setInterval(checkNuevosPedidos, 5000);
+  function actualizarCronometros() {
+    const cronometros = document.querySelectorAll('.cronometro');
+
+    cronometros.forEach(cronometro => {
+      const timestamp = parseInt(cronometro.dataset.timestamp);
+      const duracion = parseInt(cronometro.dataset.duracion);
+
+      if (!timestamp || !duracion) {
+        cronometro.textContent = '00:00:00';
+        return;
+      }
+
+      const ahora = Math.floor(Date.now() / 1000);
+      const tiempoPasado = ahora - timestamp;
+      const tiempoRestante = duracion - tiempoPasado;
+
+      if (tiempoRestante <= 0) {
+        cronometro.textContent = '00:00:00';
+        cronometro.classList.add('text-muted');
+      } else {
+        cronometro.textContent = formatoTiempo(tiempoRestante);
+        cronometro.classList.remove('text-muted');
+      }
+    });
+  }
+
+  // Actualiza cada segundo
+  setInterval(actualizarCronometros, 1000);
+  // Actualiza una vez al cargar la página
+  actualizarCronometros();
 </script>
+
 </body>
 </html>
-
-
