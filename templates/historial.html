@@ -1,178 +1,104 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>📚 Historial - Eggsquisitos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
-    .titulo-marca {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-    }
-    #reportes {
-      display: none;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-    #reportes.visible {
-      display: block;
-      opacity: 1;
-    }
-    .centrado {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-  </style>
-</head>
-<body class="bg-light text-dark">
+{% extends "base.html" %}
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="/">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" height="40" class="me-2" />
-      <span class="fs-4">Eggsquisitos</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('ver_pedidos') }}">📝 Pedidos</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('por_entregar') }}">📦 Por entregar</a></li>
-        <li class="nav-item"><a class="nav-link active" href="{{ url_for('historial') }}">📚 Historial</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('online') }}">💻 Online</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">🏪 Almacén</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">⛔ Sin stock</a></li>
-      </ul>
+{% block title %}📚 Historial - Eggsquisitos{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4 text-gray-800">📚 Pedidos Entregados</h1>
+
+<div class="flex justify-center mb-6">
+  <button id="btnReportes" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow">
+    📊 Mostrar Reportes
+  </button>
+</div>
+
+<!-- Reportes -->
+<div id="reportes" class="hidden transition-opacity duration-500 opacity-0 space-y-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Pedidos por Día -->
+    <div class="bg-white p-4 rounded shadow">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-semibold text-gray-700">📈 Pedidos por Día</h2>
+        <span class="text-sm bg-blue-100 text-blue-800 px-2 py-0.5 rounded">🧾 Total: {{ total_pedidos }}</span>
+      </div>
+      <canvas id="graficoPedidos" height="200"></canvas>
     </div>
-  </div>
-</nav>
 
-<!-- CONTENIDO PRINCIPAL -->
-<div class="container mt-4">
-  <h1 class="mb-4">📚 Pedidos Entregados</h1>
-
-  <div class="centrado">
-    <button id="btnReportes" class="btn btn-primary" onclick="mostrarOcultarReportes()">📊 Mostrar Reportes</button>
-  </div>
-
-  <!-- Reportes -->
-  <div id="reportes">
-    <div class="row mb-4">
-      <!-- PEDIDOS POR DÍA -->
-      <div class="col-md-6 mb-3">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title d-flex justify-content-between align-items-center">
-              <span>📈 Pedidos por Día</span>
-              <span class="badge bg-primary fs-6">🧾 Total: {{ total_pedidos }}</span>
-            </h5>
-            <canvas id="graficoPedidos"></canvas>
-          </div>
-        </div>
+    <!-- Ganancias por Día -->
+    <div class="bg-white p-4 rounded shadow">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-semibold text-gray-700">💰 Ganancias por Día</h2>
+        <span class="text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded">💰 ${{ total_ganancias }} MXN</span>
       </div>
-
-      <!-- GANANCIAS POR DÍA -->
-      <div class="col-md-6 mb-3">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title d-flex justify-content-between align-items-center">
-              <span>💰 Ganancias por Día</span>
-              <span class="badge bg-success fs-6">💰 Total: ${{ total_ganancias }} MXN</span>
-            </h5>
-            <canvas id="graficoGanancias"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- PLATILLOS MÁS PEDIDOS -->
-      <div class="col-md-12 mb-3">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">🍳 Platillos más pedidos</h5>
-            <canvas id="graficoPlatillos"></canvas>
-          </div>
-        </div>
-      </div>
+      <canvas id="graficoGanancias" height="200"></canvas>
     </div>
   </div>
 
-  <!-- HISTORIAL DE PEDIDOS -->
+  <!-- Platillos más pedidos -->
+  <div class="bg-white p-4 rounded shadow">
+    <h2 class="text-lg font-semibold text-gray-700 mb-2">🍳 Platillos más pedidos</h2>
+    <canvas id="graficoPlatillos" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Historial de pedidos -->
+<div class="mt-8 space-y-4">
   {% if pedidos %}
     {% for pedido in pedidos %}
-      <div class="card mb-3 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Pedido ID: {{ pedido.id }} - <span class="badge bg-success">Entregado</span></h5>
-          <p><strong>Entregado el:</strong> {{ pedido.fecha_entrega }}</p>
-          <ul>
-            {% for item, cantidad in pedido.conteo.items() %}
-              <li>
-                {{ item }} x {{ cantidad }}
-                {% if pedido.huevos and item in pedido.huevos %}
-                  - <em>{{ pedido.huevos[item] | join(', ') }}</em>
-                {% endif %}
-                {% if pedido.terminos_huevo and item in pedido.terminos_huevo %}
-                  <br><small><em>Término huevo: {{ pedido.terminos_huevo[item] }}</em></small>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-          {% if pedido.notas %}
-            <p><strong>Notas:</strong> {{ pedido.notas }}</p>
-          {% endif %}
-          <p><strong>Total:</strong> ${{ pedido.total }} MXN</p>
-        </div>
+      <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
+        <h2 class="text-md font-semibold text-gray-700 mb-1">
+          Pedido ID: {{ pedido.id }} <span class="ml-2 text-green-700 text-sm">✅ Entregado</span>
+        </h2>
+        <p class="text-sm text-gray-600 mb-1">🕒 <strong>Entregado el:</strong> {{ pedido.fecha_entrega }}</p>
+        <ul class="list-disc ml-6 text-sm text-gray-700">
+          {% for item, cantidad in pedido.conteo.items() %}
+            <li>
+              {{ item }} x {{ cantidad }}
+              {% if pedido.huevos and item in pedido.huevos %}
+                - <em>{{ pedido.huevos[item] | join(', ') }}</em>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        {% if pedido.notas %}
+          <p class="text-sm mt-2 text-gray-700"><strong>Notas:</strong> {{ pedido.notas }}</p>
+        {% endif %}
+        <p class="text-sm mt-2 font-semibold text-gray-800">💵 Total: ${{ pedido.total }} MXN</p>
       </div>
     {% endfor %}
   {% else %}
-    <div class="alert alert-warning">
+    <div class="bg-yellow-100 text-yellow-800 p-4 rounded text-lg shadow">
       Aún no se ha entregado ningún pedido.
     </div>
   {% endif %}
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  function mostrarOcultarReportes() {
-    const reportes = document.getElementById("reportes");
-    const boton = document.getElementById("btnReportes");
+  const reportes = document.getElementById("reportes");
+  const boton = document.getElementById("btnReportes");
 
-    if (reportes.classList.contains("visible")) {
-      reportes.classList.remove("visible");
-      setTimeout(() => {
-        reportes.style.display = "none";
-      }, 500);
-      boton.textContent = "📊 Mostrar Reportes";
-    } else {
-      reportes.style.display = "block";
-      setTimeout(() => {
-        reportes.classList.add("visible");
-      }, 10);
+  boton.addEventListener("click", () => {
+    if (reportes.classList.contains("hidden")) {
+      reportes.classList.remove("hidden");
+      setTimeout(() => reportes.classList.add("opacity-100"), 10);
       boton.textContent = "❌ Ocultar Reportes";
       dibujarGraficas();
+    } else {
+      reportes.classList.remove("opacity-100");
+      setTimeout(() => reportes.classList.add("hidden"), 500);
+      boton.textContent = "📊 Mostrar Reportes";
     }
-  }
+  });
 
   function dibujarGraficas() {
-    const pedidosPorDiaLabels = {{ pedidos_por_dia | map(attribute=0) | list | tojson }};
-    const pedidosPorDiaValores = {{ pedidos_por_dia | map(attribute=1) | list | tojson }};
-    const gananciasPorDiaLabels = {{ ganancias_por_dia | map(attribute=0) | list | tojson }};
-    const gananciasPorDiaValores = {{ ganancias_por_dia | map(attribute=1) | list | tojson }};
-    const platillosLabels = {{ platillos_mas_pedidos | map(attribute=0) | list | tojson }};
-    const platillosValores = {{ platillos_mas_pedidos | map(attribute=1) | list | tojson }};
-
     new Chart(document.getElementById("graficoPedidos"), {
       type: "bar",
       data: {
-        labels: pedidosPorDiaLabels,
+        labels: {{ pedidos_por_dia | map(attribute=0) | list | tojson }},
         datasets: [{
           label: "Pedidos",
-          backgroundColor: "#4e73df",
-          data: pedidosPorDiaValores
+          backgroundColor: "#60a5fa",
+          data: {{ pedidos_por_dia | map(attribute=1) | list | tojson }}
         }]
       },
       options: {
@@ -184,11 +110,11 @@
     new Chart(document.getElementById("graficoGanancias"), {
       type: "bar",
       data: {
-        labels: gananciasPorDiaLabels,
+        labels: {{ ganancias_por_dia | map(attribute=0) | list | tojson }},
         datasets: [{
           label: "Ganancias (MXN)",
-          backgroundColor: "#1cc88a",
-          data: gananciasPorDiaValores
+          backgroundColor: "#34d399",
+          data: {{ ganancias_por_dia | map(attribute=1) | list | tojson }}
         }]
       },
       options: {
@@ -200,11 +126,11 @@
     new Chart(document.getElementById("graficoPlatillos"), {
       type: "bar",
       data: {
-        labels: platillosLabels,
+        labels: {{ platillos_mas_pedidos | map(attribute=0) | list | tojson }},
         datasets: [{
           label: "Veces Pedido",
-          backgroundColor: "#f6c23e",
-          data: platillosValores
+          backgroundColor: "#facc15",
+          data: {{ platillos_mas_pedidos | map(attribute=1) | list | tojson }}
         }]
       },
       options: {
@@ -214,8 +140,4 @@
     });
   }
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
+{% endblock %}

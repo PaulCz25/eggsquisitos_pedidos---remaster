@@ -1,366 +1,147 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nuevo Pedido</title>
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-  />
-  <style>
-    .resaltado {
-      animation: flash 0.3s ease-in-out;
-    }
-    @keyframes flash {
-      0% {
-        background-color: #d4edda;
-      }
-      100% {
-        background-color: white;
-      }
-    }
-    .toast-container {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      z-index: 9999;
-    }
-    .toast {
-      background-color: #28a745;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      margin-bottom: 0.5rem;
-      animation: fadeOut 2s forwards;
-    }
-    @keyframes fadeOut {
-      0% {
-        opacity: 1;
-      }
-      80% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(100%);
-      }
-    }
-    .card:hover {
-      cursor: pointer;
-      background-color: #f8f9fa;
-      transition: background-color 0.2s;
-    }
-    .cantidad-control {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-    .btn-cantidad {
-      width: 40px;
-      height: 40px;
-      font-size: 1.3rem;
-      padding: 0;
-    }
-    .form-control-sm {
-      font-size: 1rem;
-      width: 45px;
-      text-align: center;
-    }
-    .no-click-propagation {
-      pointer-events: auto;
-    }
-    #total-container {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      background: #fff;
-      border: 2px solid #198754;
-      padding: 1rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      font-size: 1.2rem;
-      z-index: 999;
-    }
-    @media (max-width: 768px) {
-      .card h5 {
-        font-size: 1rem;
-      }
-      .card-text {
-        font-size: 0.9rem;
-      }
-      #total-container {
-        font-size: 1rem;
-        padding: 0.7rem;
-      }
-      .btn-cantidad {
-        width: 36px;
-        height: 36px;
-        font-size: 1.1rem;
-      }
-    }
-  </style>
-</head>
-<body class="p-4">
-  <h1 class="mb-4 text-center">📋 Nueva Comanda</h1>
-  <a href="/" class="btn btn-secondary mb-3">⬅️ Volver a Por Entregar</a>
+{% extends "base.html" %}
 
-  <form action="/pedido" method="post">
-    <h3 class="mb-3">Platillos disponibles:</h3>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+{% block title %}📝 Nuevo Pedido - Eggsquisitos{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-800 mb-4">📝 Nueva Comanda</h1>
+
+<form action="/pedido" method="post" class="space-y-8">
+  <!-- PLATILLOS -->
+  <div>
+    <h2 class="text-xl font-semibold text-gray-700 mb-2">🥓 Platillos disponibles</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       {% set orden_personalizada = [
-        "Hotcakes",
-        "Hotcakes con fruta",
-        "Hotcakes con tocino",
-        "French toast",
-        "Muffin",
-        "Croissant",
-        "2x2",
-        "Sándwich",
-        "Americano",
-        "French Plate",
-        "Slam",
-        "Chilaquiles",
-        "Chilaquiles Deluxe",
-        "Mini",
-        "Kid Cheese"
+        "Hotcakes", "Hotcakes con fruta", "Hotcakes con tocino", "French toast",
+        "Muffin", "Croissant", "2x2", "Sándwich", "Americano", "French Plate",
+        "Slam", "Chilaquiles", "Chilaquiles Deluxe", "Mini", "Kid Cheese"
       ] %}
 
-      {% for item in orden_personalizada %}
-      {% if item in menu %}
-      <div class="col">
-        <div class="card h-100 p-3" onclick="incrementarCantidad('{{ item }}')">
-          <input
-            type="checkbox"
-            class="d-none"
-            name="item"
-            value="{{ item }}"
-            id="{{ item }}"
-          />
-          <h5 class="card-title text-center">{{ item }}</h5>
-          <p class="card-text text-center">${{ menu[item] }} MXN</p>
+      {% for item in orden_personalizada if item in menu %}
+      <div class="bg-white rounded-lg p-4 shadow hover:shadow-md transition">
+        <input type="checkbox" name="item" value="{{ item }}" id="{{ item }}" class="hidden">
+        <h3 class="text-lg font-semibold text-gray-700 text-center">{{ item }}</h3>
+        <p class="text-center text-gray-500 mb-2">${{ menu[item] }} MXN</p>
 
-          <div class="cantidad-control no-click-propagation">
-            <button
-              type="button"
-              class="btn btn-outline-danger btn-cantidad"
-              onclick="event.stopPropagation(); cambiarCantidad('{{ item }}', -1)"
-            >
-              −
-            </button>
-            <input
-              type="text"
-              readonly
-              name="cantidad_{{ item }}"
-              id="cantidad_{{ item }}"
-              value="0"
-              class="form-control form-control-sm"
-            />
-            <button
-              type="button"
-              class="btn btn-outline-success btn-cantidad"
-              onclick="event.stopPropagation(); cambiarCantidad('{{ item }}', 1)"
-            >
-              +
-            </button>
-          </div>
-
-          {% if item in huevo_menu or item == "Chilaquiles" or item == "Chilaquiles Deluxe" %}
-          <div id="huevos_{{ item }}" class="mt-2 no-click-propagation"></div>
-          <script>
-            document.addEventListener("DOMContentLoaded", () => {
-              updateHuevos("{{ item }}");
-            });
-          </script>
-          {% endif %}
+        <div class="flex justify-center items-center gap-2">
+          <button type="button" onclick="cambiarCantidad('{{ item }}', -1)" class="px-3 py-1 bg-red-200 hover:bg-red-300 rounded text-xl font-bold">−</button>
+          <input type="text" name="cantidad_{{ item }}" id="cantidad_{{ item }}" value="0" readonly class="w-12 text-center border border-gray-300 rounded py-1">
+          <button type="button" onclick="cambiarCantidad('{{ item }}', 1)" class="px-3 py-1 bg-green-200 hover:bg-green-300 rounded text-xl font-bold">+</button>
         </div>
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
 
-    <h3 class="mt-5 mb-3">Bebidas:</h3>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-      {% set bebidas = {
-      "Cafe Americano 12Oz": 35,
-      "Cafe Americano 16Oz": 45,
-      "Licuado Fresa": 65,
-      "Licuado Platano": 65,
-      "Licuado Platano-Fresa": 65,
-      "Licuado Platano-Choco": 65,
-      "Licuado Chocomil": 55,
-      "Jugo de naranja": 45,
-      "Jugo verde": 65,
-      "Soda": 35
-      } %}
-      {% for bebida, precio in bebidas.items() %}
-      <div class="col">
-        <div class="card h-100 p-3" onclick="incrementarCantidad('{{ bebida }}')">
-          <input
-            type="checkbox"
-            class="d-none"
-            name="item"
-            value="{{ bebida }}"
-            id="{{ bebida }}"
-          />
-          <h5 class="card-title text-center">{{ bebida }}</h5>
-          <p class="card-text text-center">${{ precio }} MXN</p>
-
-          <div class="cantidad-control no-click-propagation">
-            <button
-              type="button"
-              class="btn btn-outline-danger btn-cantidad"
-              onclick="event.stopPropagation(); cambiarCantidad('{{ bebida }}', -1)"
-            >
-              −
-            </button>
-            <input
-              type="text"
-              readonly
-              name="cantidad_{{ bebida }}"
-              id="cantidad_{{ bebida }}"
-              value="0"
-              class="form-control form-control-sm"
-            />
-            <button
-              type="button"
-              class="btn btn-outline-success btn-cantidad"
-              onclick="event.stopPropagation(); cambiarCantidad('{{ bebida }}', 1)"
-            >
-              +
-            </button>
-          </div>
-        </div>
+        {% if item in huevo_menu %}
+        <div id="huevos_{{ item }}" class="mt-2 space-y-1"></div>
+        <script>
+          document.addEventListener("DOMContentLoaded", () => updateHuevos("{{ item }}"));
+        </script>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
-
-    <div class="mb-3 mt-4">
-      <label for="notas" class="form-label">📝 Especificaciones del pedido:</label>
-      <textarea
-        name="notas"
-        class="form-control"
-        rows="2"
-        placeholder="Ej. Sin cebolla, extra tocino..."
-      ></textarea>
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">✅ Enviar Comanda</button>
-  </form>
-
-  <!-- Total del pedido -->
-  <div id="total-container">
-    <span id="total-pedido">Total: $0.00 MXN</span>
   </div>
 
-  <script>
-    const menuPrecios = {{ menu | tojson | safe }};
-    const bebidasPrecios = {
-      "Cafe Americano 12Oz": 35,
-      "Cafe Americano 16Oz": 45,
-      "Licuado Fresa": 65,
-      "Licuado Platano": 65,
-      "Licuado Platano-Fresa": 65,
-      "Licuado Platano-Choco": 65,
-      "Licuado Chocomil": 55,
-      "Jugo de naranja": 45,
-      "Jugo verde": 65,
-      "Soda": 35
-    };
-    const precios = {...menuPrecios, ...bebidasPrecios};
+  <!-- BEBIDAS -->
+  <div>
+    <h2 class="text-xl font-semibold text-gray-700 mb-2">🥤 Bebidas</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {% set bebidas = {
+        "Cafe Americano 12Oz": 35, "Cafe Americano 16Oz": 45,
+        "Licuado Fresa": 65, "Licuado Platano": 65, "Licuado Platano-Fresa": 65,
+        "Licuado Platano-Choco": 65, "Licuado Chocomil": 55,
+        "Jugo de naranja": 45, "Jugo verde": 65, "Soda": 35
+      } %}
+      {% for bebida, precio in bebidas.items() %}
+      <div class="bg-white rounded-lg p-4 shadow hover:shadow-md transition">
+        <input type="checkbox" name="item" value="{{ bebida }}" id="{{ bebida }}" class="hidden">
+        <h3 class="text-lg font-semibold text-gray-700 text-center">{{ bebida }}</h3>
+        <p class="text-center text-gray-500 mb-2">${{ precio }} MXN</p>
 
-    function showToast(mensaje) {
-      const container =
-        document.querySelector(".toast-container") ||
-        (() => {
-          const div = document.createElement("div");
-          div.className = "toast-container";
-          document.body.appendChild(div);
-          return div;
-        })();
+        <div class="flex justify-center items-center gap-2">
+          <button type="button" onclick="cambiarCantidad('{{ bebida }}', -1)" class="px-3 py-1 bg-red-200 hover:bg-red-300 rounded text-xl font-bold">−</button>
+          <input type="text" name="cantidad_{{ bebida }}" id="cantidad_{{ bebida }}" value="0" readonly class="w-12 text-center border border-gray-300 rounded py-1">
+          <button type="button" onclick="cambiarCantidad('{{ bebida }}', 1)" class="px-3 py-1 bg-green-200 hover:bg-green-300 rounded text-xl font-bold">+</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.textContent = mensaje;
-      container.appendChild(toast);
+  <!-- NOTAS -->
+  <div>
+    <label for="notas" class="block text-gray-700 font-medium mb-1">📝 Especificaciones del pedido</label>
+    <textarea name="notas" rows="3" class="w-full border border-gray-300 rounded p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"></textarea>
+  </div>
 
-      setTimeout(() => toast.remove(), 2500);
-    }
+  <!-- BOTÓN SUBMIT -->
+  <div class="text-center">
+    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-lg font-semibold px-6 py-2 rounded shadow">
+      ✅ Enviar Comanda
+    </button>
+  </div>
+</form>
 
-    function updateHuevos(item) {
-      const cantidad =
-        parseInt(document.getElementById(`cantidad_${item}`).value) || 0;
-      const huevoContainer = document.getElementById(`huevos_${item}`);
-      if (!huevoContainer) return;
-      huevoContainer.innerHTML = "";
+<!-- TOTAL -->
+<div id="total-container" class="fixed bottom-4 right-4 bg-white border-2 border-green-500 shadow-lg rounded-xl px-6 py-3 text-lg font-semibold text-green-700">
+  Total: <span id="total-pedido">$0.00 MXN</span>
+</div>
 
-      for (let i = 1; i <= cantidad; i++) {
-        const select = document.createElement("select");
-        select.name = `huevo_${item}[]`;
-        select.className = "form-select form-select-sm my-1 w-100 no-click-propagation";
+<!-- SCRIPTS -->
+<script>
+  const menuPrecios = {{ menu | tojson | safe }};
+  const bebidasPrecios = {
+    "Cafe Americano 12Oz": 35, "Cafe Americano 16Oz": 45,
+    "Licuado Fresa": 65, "Licuado Platano": 65, "Licuado Platano-Fresa": 65,
+    "Licuado Platano-Choco": 65, "Licuado Chocomil": 55,
+    "Jugo de naranja": 45, "Jugo verde": 65, "Soda": 35
+  };
+  const precios = { ...menuPrecios, ...bebidasPrecios };
 
-        const opciones = ["", "H.Rev", "H.T", "H.M", "H.C"];
-        opciones.forEach((valor) => {
-          const opt = document.createElement("option");
-          opt.value = valor;
-          opt.text = valor || "Tipo de huevo";
-          select.appendChild(opt);
-        });
+  function cambiarCantidad(item, delta) {
+    const input = document.getElementById(`cantidad_${item}`);
+    const checkbox = document.getElementById(item);
+    let cantidad = parseInt(input.value) || 0;
+    let nueva = cantidad + delta;
 
-        select.addEventListener("click", (e) => e.stopPropagation());
-        huevoContainer.appendChild(select);
-      }
-    }
+    if (nueva < 0 || nueva > 10) return;
+    input.value = nueva;
+    if (nueva > 0) checkbox.checked = true;
+    else checkbox.checked = false;
 
-    function cambiarCantidad(item, delta) {
-      const inputCantidad = document.getElementById(`cantidad_${item}`);
-      const checkbox = document.getElementById(item);
+    updateHuevos(item);
+    actualizarTotal();
+  }
 
-      let cantidad = parseInt(inputCantidad.value) || 0;
-      let nuevaCantidad = cantidad + delta;
+  function updateHuevos(item) {
+    const cantidad = parseInt(document.getElementById(`cantidad_${item}`).value) || 0;
+    const contenedor = document.getElementById(`huevos_${item}`);
+    if (!contenedor) return;
+    contenedor.innerHTML = "";
 
-      if (nuevaCantidad < 0 || nuevaCantidad > 10) return;
+    for (let i = 0; i < cantidad; i++) {
+      const select = document.createElement("select");
+      select.name = `huevo_${item}[]`;
+      select.className = "w-full border border-gray-300 rounded p-1";
 
-      inputCantidad.value = nuevaCantidad;
-      inputCantidad.classList.add("resaltado");
-      updateHuevos(item);
-      actualizarTotal();
-
-      if (!checkbox.checked && nuevaCantidad > 0) {
-        checkbox.checked = true;
-      } else if (checkbox.checked && nuevaCantidad === 0) {
-        checkbox.checked = false;
-      }
-
-      showToast(`${delta > 0 ? "+" : "-"}1 a ${item}`);
-      setTimeout(() => inputCantidad.classList.remove("resaltado"), 500);
-    }
-
-    function incrementarCantidad(item) {
-      cambiarCantidad(item, 1);
-    }
-
-    function actualizarTotal() {
-      let total = 0;
-
-      Object.keys(precios).forEach((item) => {
-        const input = document.getElementById(`cantidad_${item}`);
-        if (input) {
-          const cantidad = parseInt(input.value) || 0;
-          total += cantidad * precios[item];
-        }
+      ["", "H.Rev", "H.T", "H.M", "H.C"].forEach(opt => {
+        const option = document.createElement("option");
+        option.value = opt;
+        option.text = opt || "Tipo de huevo";
+        select.appendChild(option);
       });
 
-      document.getElementById("total-pedido").textContent = `Total: $${total.toFixed(
-        2
-      )} MXN`;
+      contenedor.appendChild(select);
     }
+  }
 
-    document.addEventListener("DOMContentLoaded", actualizarTotal);
-  </script>
+  function actualizarTotal() {
+    let total = 0;
+    for (let item in precios) {
+      const input = document.getElementById(`cantidad_${item}`);
+      if (input) total += (parseInt(input.value) || 0) * precios[item];
+    }
+    document.getElementById("total-pedido").textContent = `$${total.toFixed(2)} MXN`;
+  }
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+  document.addEventListener("DOMContentLoaded", actualizarTotal);
+</script>
+{% endblock %}
 

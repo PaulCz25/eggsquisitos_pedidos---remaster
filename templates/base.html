@@ -1,0 +1,46 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Eggsquisitos{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-md hidden md:flex flex-col">
+    <div class="p-6 border-b flex items-center gap-3">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-12 w-12 rounded-full shadow" />
+      <h1 class="text-xl font-bold text-yellow-600">Eggsquisitos</h1>
+    </div>
+    <nav class="flex-1 p-4 space-y-2">
+      <a href="/" class="flex items-center gap-2 p-2 rounded-lg hover:bg-yellow-50 text-yellow-800 font-semibold bg-yellow-100">
+        📦 Por entregar
+      </a>
+      <a href="/pedidos" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+        📝 Pedidos
+      </a>
+      <a href="/historial" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+        📚 Historial
+      </a>
+      <a href="/online" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+        💻 Online
+      </a>
+      <a href="#" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+        🏪 Almacén
+      </a>
+    </nav>
+    <div class="p-4 border-t text-sm text-gray-500">Administrador</div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 overflow-auto">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

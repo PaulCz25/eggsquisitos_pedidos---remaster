@@ -1,154 +1,94 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>📦 Por Entregar - Eggsquisitos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="refresh" content="3" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
+{% extends "base.html" %}
 
-    .titulo-marca {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-    }
+{% block title %}📦 Por Entregar - Eggsquisitos{% endblock %}
 
-    .drag-handle {
-      cursor: move;
-      user-select: none;
-      font-size: 1.2rem;
-      float: right;
-    }
-
-    .cronometro {
-      font-weight: bold;
-    }
-
-    .dragging {
-      opacity: 0.5;
-    }
-
-    .drag-over {
-      border: 2px dashed #0d6efd;
-    }
-  </style>
-</head>
-<body class="bg-light text-dark">
-
-<!-- SONIDO DE NOTIFICACIÓN -->
+{% block content %}
 <audio id="notificacion-audio" src="{{ url_for('static', filename='audio/notification.mp3') }}"></audio>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="/">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" height="40" class="me-2" />
-      <span class="fs-4">Eggsquisitos</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('ver_pedidos') }}">📝 Pedidos</a></li>
-        <li class="nav-item"><a class="nav-link active" href="{{ url_for('por_entregar') }}">📦 Por entregar</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('historial') }}">📚 Historial</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('online') }}">💻 Online</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">🏪 Almacén</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">⛔ Sin stock</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<h1 class="text-2xl font-bold mb-4 text-gray-800">📦 Pedidos Por Entregar</h1>
 
-<!-- CONTENIDO PRINCIPAL -->
-<div class="container mt-4">
-  <h1 class="mb-4">📦 Pedidos Por Entregar</h1>
-
-  {% if pedidos %}
-    <div id="lista-pedidos" class="row row-cols-1 row-cols-md-2 g-3" data-total="{{ pedidos|length }}">
-      {% for pedido in pedidos %}
-        <div 
-          class="col pedido-item" 
-          draggable="true" 
-          data-pedido-id="{{ pedido.id }}"
-        >
-          <div class="card h-100 shadow-sm {% if pedido.tipo == 'online' %}border-primary{% endif %}">
-            <div class="card-body">
-              <span class="drag-handle">☰</span>
-              <h5 class="card-title">
-                Pedido ID: {{ pedido.id }}
-                {% if pedido.tipo == 'online' %}
-                  - <span class="badge bg-info text-dark">Online</span>
-                {% else %}
-                  - <span class="badge bg-warning text-dark">Pendiente</span>
-                {% endif %}
-              </h5>
-
+{% if pedidos %}
+  <div id="lista-pedidos" class="grid grid-cols-1 md:grid-cols-2 gap-4" data-total="{{ pedidos|length }}">
+    {% for pedido in pedidos %}
+      <div class="pedido-item" draggable="true" data-pedido-id="{{ pedido.id }}">
+        <div class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 {% if pedido.tipo == 'online' %}border-blue-500{% else %}border-yellow-500{% endif %}">
+          <div class="flex justify-between items-start">
+            <h2 class="text-lg font-semibold text-gray-700">
+              Pedido ID: {{ pedido.id }}
               {% if pedido.tipo == 'online' %}
-                <p><strong>Tiempo para recoger:</strong> {{ pedido.tiempo_entrega }} minutos</p>
-                <p>
-                  <strong>Tiempo restante:</strong>
-                  <span class="text-danger fw-bold cronometro"
-                        data-timestamp="{{ pedido.timestamp }}"
-                        data-duracion="{{ pedido.tiempo_entrega_segundos or 0 }}">
-                    00:00:00
-                  </span>
-                </p>
+                <span class="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-sm">Online</span>
+              {% else %}
+                <span class="ml-2 bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-sm">Pendiente</span>
               {% endif %}
-
-              <ul>
-                {% for item, cantidad in pedido.conteo.items() %}
-                  <li>
-                    {{ item }} x {{ cantidad }}
-                    {% if pedido.huevos and item in pedido.huevos %}
-                      - <em>{{ pedido.huevos[item] | join(', ') }}</em>
-                    {% endif %}
-                  </li>
-                {% endfor %}
-              </ul>
-
-              {% if pedido.notas %}
-                <p><strong>Notas:</strong> {{ pedido.notas }}</p>
-              {% endif %}
-
-              <p><strong>Total:</strong> ${{ pedido.total }} MXN</p>
-
-              <form method="post" action="/entregar/{{ pedido.id }}">
-                <button type="submit" class="btn btn-success mt-2" style="font-size: 1.2rem; padding: 0.5rem 1rem;">
-                  ✅ Marcar como entregado
-                </button>
-              </form>
-            </div>
+            </h2>
+            <span class="cursor-move text-xl">☰</span>
           </div>
+
+          {% if pedido.tipo == 'online' %}
+            <p class="text-sm mt-1 text-gray-600"><strong>Tiempo para recoger:</strong> {{ pedido.tiempo_entrega }} minutos</p>
+            <p class="text-sm text-gray-600">
+              <strong>Tiempo restante:</strong>
+              <span class="text-red-600 font-bold cronometro"
+                    data-timestamp="{{ pedido.timestamp }}"
+                    data-duracion="{{ pedido.tiempo_entrega_segundos or 0 }}">00:00:00</span>
+            </p>
+          {% endif %}
+
+          <ul class="list-disc ml-6 mt-2 text-sm text-gray-700">
+            {% for item, cantidad in pedido.conteo.items() %}
+              <li>
+                {{ item }} x {{ cantidad }}
+                {% if pedido.huevos and item in pedido.huevos %}
+                  - <em>{{ pedido.huevos[item] | join(', ') }}</em>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+
+          {% if pedido.notas %}
+            <p class="text-sm mt-2 text-gray-700"><strong>Notas:</strong> {{ pedido.notas }}</p>
+          {% endif %}
+
+          <p class="text-sm mt-2"><strong>Total:</strong> ${{ pedido.total }} MXN</p>
+
+          <form method="post" action="/entregar/{{ pedido.id }}">
+            <button type="submit" class="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition text-lg">
+              ✅ Marcar como entregado
+            </button>
+          </form>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="alert alert-info" style="font-size: 1.3rem;">
-      No hay pedidos por entregar.
-    </div>
-  {% endif %}
-</div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="bg-blue-100 text-blue-800 p-4 rounded-lg text-lg shadow">
+    No hay pedidos por entregar.
+  </div>
+{% endif %}
 
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+<!-- Notificación sonora si hay nuevo pedido online -->
 <script>
   const listaPedidos = document.getElementById('lista-pedidos');
   const audio = document.getElementById('notificacion-audio');
 
-  let pedidosPrevios = parseInt(localStorage.getItem("totalPedidos")) || 0;
-  const pedidosActuales = parseInt(listaPedidos.dataset.total);
+  let pedidosPrevios = parseInt(localStorage.getItem("totalPedidosOnline")) || 0;
+  let pedidosActuales = 0;
+
+  // Contar solo pedidos online
+  document.querySelectorAll('.pedido-item').forEach(el => {
+    if (el.querySelector('.bg-blue-100')) {
+      pedidosActuales++;
+    }
+  });
 
   if (pedidosActuales > pedidosPrevios) {
-    audio.play().catch(() => console.log("Sonido bloqueado por el navegador"));
+    audio.play().catch(() => {});
   }
 
-  localStorage.setItem("totalPedidos", pedidosActuales);
+  localStorage.setItem("totalPedidosOnline", pedidosActuales);
 </script>
 
+<!-- Drag & drop -->
 <script>
   const lista = document.getElementById('lista-pedidos');
   let draggedItem = null;
@@ -158,13 +98,13 @@
       draggedItem = e.target;
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', draggedItem.dataset.pedidoId);
-      setTimeout(() => draggedItem.classList.add('dragging'), 0);
+      setTimeout(() => draggedItem.classList.add('opacity-50'), 0);
     }
   });
 
   lista.addEventListener('dragend', () => {
     if (draggedItem) {
-      draggedItem.classList.remove('dragging');
+      draggedItem.classList.remove('opacity-50');
       draggedItem = null;
     }
   });
@@ -172,7 +112,7 @@
   lista.addEventListener('dragover', (e) => {
     e.preventDefault();
     const afterElement = getDragAfterElement(lista, e.clientY);
-    const dragging = document.querySelector('.dragging');
+    const dragging = document.querySelector('.pedido-item.opacity-50');
     if (afterElement == null) {
       lista.appendChild(dragging);
     } else {
@@ -181,7 +121,7 @@
   });
 
   function getDragAfterElement(container, y) {
-    const elements = [...container.querySelectorAll('.pedido-item:not(.dragging)')];
+    const elements = [...container.querySelectorAll('.pedido-item:not(.opacity-50)')];
     return elements.reduce((closest, el) => {
       const box = el.getBoundingClientRect();
       const offset = y - box.top - box.height / 2;
@@ -194,6 +134,7 @@
   }
 </script>
 
+<!-- Cronómetro -->
 <script>
   function formatoTiempo(segundos) {
     const hrs = Math.floor(segundos / 3600).toString().padStart(2, '0');
@@ -204,7 +145,6 @@
 
   function actualizarCronometros() {
     const cronometros = document.querySelectorAll('.cronometro');
-
     cronometros.forEach(cronometro => {
       const timestamp = parseInt(cronometro.dataset.timestamp);
       const duracion = parseInt(cronometro.dataset.duracion);
@@ -220,10 +160,10 @@
 
       if (tiempoRestante <= 0) {
         cronometro.textContent = '00:00:00';
-        cronometro.classList.add('text-muted');
+        cronometro.classList.add('text-gray-400');
       } else {
         cronometro.textContent = formatoTiempo(tiempoRestante);
-        cronometro.classList.remove('text-muted');
+        cronometro.classList.remove('text-gray-400');
       }
     });
   }
@@ -231,6 +171,4 @@
   setInterval(actualizarCronometros, 1000);
   actualizarCronometros();
 </script>
-
-</body>
-</html>
+{% endblock %}
