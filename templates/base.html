@@ -10,87 +10,48 @@
     body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col md:flex-row">
+<body class="bg-gray-50 text-gray-800">
 
-  <!-- Navbar para móviles -->
-  <header class="md:hidden bg-white shadow p-4 flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-10 w-10 rounded-full shadow" />
-      <h1 class="text-xl font-bold text-yellow-600">Eggsquisitos</h1>
+  <!-- Navbar -->
+  <nav class="bg-white shadow-md fixed top-0 w-full z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <div class="flex items-center gap-3">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-10 w-10 rounded-full shadow" />
+          <span class="text-2xl italic font-bold text-yellow-600">Eggsquisitos</span>
+        </div>
+        <div class="hidden md:flex space-x-4">
+          <a href="/" class="text-gray-700 hover:text-yellow-600 font-semibold transition">📦 Por entregar</a>
+          <a href="/pedidos" class="text-gray-700 hover:text-yellow-600 font-semibold transition">📝 Pedidos</a>
+          <a href="/historial" class="text-gray-700 hover:text-yellow-600 font-semibold transition">📚 Historial</a>
+          <a href="/online" class="text-gray-700 hover:text-yellow-600 font-semibold transition">💻 Online</a>
+        </div>
+        <button id="menu-btn" class="md:hidden text-3xl focus:outline-none">☰</button>
+      </div>
     </div>
-    <button id="menu-btn" class="text-3xl focus:outline-none">☰</button>
-  </header>
-
-  <!-- Menú móvil oculto -->
-  <nav id="mobile-menu" class="md:hidden bg-white shadow-lg hidden flex-col p-4 space-y-2 z-10">
-    <a href="/" class="block p-2 rounded-lg hover:bg-yellow-50 text-yellow-800 font-semibold bg-yellow-100">📦 Por entregar</a>
-    <a href="/pedidos" class="block p-2 rounded-lg hover:bg-gray-100">📝 Pedidos</a>
-    <a href="/historial" class="block p-2 rounded-lg hover:bg-gray-100">📚 Historial</a>
-    <a href="/online" class="block p-2 rounded-lg hover:bg-gray-100">💻 Online</a>
-    <a href="#" class="block p-2 rounded-lg hover:bg-gray-100">🏪 Almacén</a>
   </nav>
 
-  <!-- Sidebar para pantallas grandes -->
-  <aside class="w-64 bg-white shadow-md hidden md:flex flex-col">
-    <div class="p-6 border-b flex items-center gap-3">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-12 w-12 rounded-full shadow" />
-      <h1 class="text-xl font-bold text-yellow-600">Eggsquisitos</h1>
-    </div>
-    <nav class="flex-1 p-4 space-y-2">
-      <a href="/" class="flex items-center gap-2 p-2 rounded-lg hover:bg-yellow-50 text-yellow-800 font-semibold bg-yellow-100">
-        📦 Por entregar
-      </a>
-      <a href="/pedidos" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
-        📝 Pedidos
-      </a>
-      <a href="/historial" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
-        📚 Historial
-      </a>
-      <a href="/online" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
-        💻 Online
-      </a>
-      <a href="#" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
-        🏪 Almacén
-      </a>
-    </nav>
-    <div class="p-4 border-t text-sm text-gray-500">Administrador</div>
-  </aside>
+  <!-- Menú móvil -->
+  <div id="mobile-menu" class="md:hidden bg-white shadow-md absolute w-full mt-16 hidden flex-col p-4 space-y-2 z-40">
+    <a href="/" class="block p-2 rounded hover:bg-yellow-100 text-yellow-700 font-semibold">📦 Por entregar</a>
+    <a href="/pedidos" class="block p-2 rounded hover:bg-yellow-100 text-yellow-700 font-semibold">📝 Pedidos</a>
+    <a href="/historial" class="block p-2 rounded hover:bg-yellow-100 text-yellow-700 font-semibold">📚 Historial</a>
+    <a href="/online" class="block p-2 rounded hover:bg-yellow-100 text-yellow-700 font-semibold">💻 Online</a>
+  </div>
 
   <!-- Contenido principal -->
-  <main class="flex-1 p-6 overflow-auto">
+  <main class="pt-20 px-4 md:px-8 pb-10">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Script para el menú móvil -->
   <script>
-    const menuBtn = document.getElementById('menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-
-    menuBtn.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
+    const menuBtn = document.getElementById("menu-btn");
+    const mobileMenu = document.getElementById("mobile-menu");
+    menuBtn.addEventListener("click", () => {
+      mobileMenu.classList.toggle("hidden");
     });
   </script>
-  <script>
-  function actualizarPedidos() {
-    fetch(location.href, { cache: "no-store" })
-      .then(response => response.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const nuevoDoc = parser.parseFromString(html, "text/html");
-        const nuevaLista = nuevoDoc.getElementById("lista-pedidos");
-        const actualLista = document.getElementById("lista-pedidos");
-
-        if (nuevaLista && actualLista && nuevaLista.dataset.total !== actualLista.dataset.total) {
-          actualLista.innerHTML = nuevaLista.innerHTML;
-          localStorage.setItem("totalPedidosOnline", nuevaLista.dataset.total);
-          const audio = document.getElementById("notificacion-audio");
-          audio.play().catch(() => {});
-        }
-      });
-  }
-
-  setInterval(actualizarPedidos, 5000); // cada 5 segundos
-</script>
 
 </body>
 </html>
+

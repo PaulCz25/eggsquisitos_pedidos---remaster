@@ -3,12 +3,14 @@
 {% block title %}📦 Por Entregar - Eggsquisitos{% endblock %}
 
 {% block content %}
-<audio id="notificacion-audio" src="{{ url_for('static', filename='audio/notification.mp3') }}"></audio>
+<audio id="notificacion-audio" preload="auto">
+  <source src="{{ url_for('static', filename='audio/notification.mp3') }}" type="audio/mpeg">
+</audio>
 
-<h1 class="text-2xl font-bold mb-4 text-gray-800">📦 Pedidos Por Entregar</h1>
+<h1 class="text-3xl font-bold mb-6 text-gray-800">📦 Pedidos Por Entregar</h1>
 
 {% if pedidos %}
-  <div id="lista-pedidos" class="grid grid-cols-1 md:grid-cols-2 gap-4" data-total="{{ pedidos|length }}">
+  <div id="lista-pedidos" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" data-total="{{ pedidos|length }}">
     {% for pedido in pedidos %}
       <div class="pedido-item touch-draggable" draggable="true" data-pedido-id="{{ pedido.id }}">
         <div class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 {% if pedido.tipo == 'online' %}border-blue-500{% else %}border-yellow-500{% endif %}">
@@ -29,7 +31,7 @@
             <p class="text-sm text-gray-600">
               <strong>Tiempo restante:</strong>
               <span class="text-red-600 font-bold cronometro"
-                    data-timestamp="{{ pedido.timestamp }}"
+                    data-timestamp="{{ pedido.timestamp or 0 }}"
                     data-duracion="{{ pedido.tiempo_entrega_segundos or 0 }}">00:00:00</span>
             </p>
           {% endif %}
@@ -66,10 +68,18 @@
   </div>
 {% endif %}
 
-<!-- 🔊 Notificación de nuevo pedido -->
+<!-- 🔓 Desbloqueo de audio para navegadores -->
 <script>
-  const audio = document.getElementById('notificacion-audio');
+  document.addEventListener("pointerdown", () => {
+    const audio = document.getElementById("notificacion-audio");
+    if (audio && audio.paused) {
+      audio.play().then(() => audio.pause()).catch(() => {});
+    }
+  }, { once: true });
+</script>
 
+<!-- 🔁 Actualización de pedidos con sonido si es ONLINE -->
+<script>
   function actualizarPedidos() {
     fetch(location.href, { cache: "no-store" })
       .then(response => response.text())
@@ -80,14 +90,23 @@
         const actualLista = document.getElementById("lista-pedidos");
 
         if (nuevaLista && actualLista && nuevaLista.dataset.total !== actualLista.dataset.total) {
-          actualLista.innerHTML = nuevaLista.innerHTML;
-          audio.play().catch(() => {});
+          const nuevoHTML = nuevaLista.innerHTML;
+          const esOnline = nuevoHTML.includes("Online");
+          actualLista.innerHTML = nuevoHTML;
+
+          if (esOnline) {
+            const audio = document.getElementById('notificacion-audio');
+            if (audio) {
+              audio.play().catch(() => {});
+            }
+          }
+
           localStorage.setItem("totalPedidosOnline", nuevaLista.dataset.total);
         }
       });
   }
 
-  setInterval(actualizarPedidos, 5000); // Actualiza cada 5 seg
+  setInterval(actualizarPedidos, 5000);
 </script>
 
 <!-- 🕘 Cronómetro -->
@@ -104,16 +123,13 @@
     cronometros.forEach(cronometro => {
       const timestamp = parseInt(cronometro.dataset.timestamp);
       const duracion = parseInt(cronometro.dataset.duracion);
-
       if (!timestamp || !duracion) {
         cronometro.textContent = '00:00:00';
         return;
       }
-
       const ahora = Math.floor(Date.now() / 1000);
       const tiempoPasado = ahora - timestamp;
       const tiempoRestante = duracion - tiempoPasado;
-
       if (tiempoRestante <= 0) {
         cronometro.textContent = '00:00:00';
         cronometro.classList.add('text-gray-400');
@@ -128,7 +144,7 @@
   actualizarCronometros();
 </script>
 
-<!-- 🟨 Drag & Drop + soporte táctil -->
+<!-- 🟨 Drag & Drop con soporte táctil -->
 <script>
   const lista = document.getElementById('lista-pedidos');
   let draggedItem = null;
@@ -170,7 +186,7 @@
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  // Táctil para móvil
+  // Soporte táctil
   lista.addEventListener("touchstart", (e) => {
     const el = e.target.closest(".pedido-item");
     if (!el) return;

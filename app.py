@@ -44,11 +44,7 @@ def por_entregar():
 
 @app.route('/pedidos')
 def ver_pedidos():
-    menu_platillos = {k: v for k, v in menu.items() if k not in [
-        "Cafe Americano 12Oz", "Cafe Americano 16Oz", "Licuado Fresa", "Licuado Platano",
-        "Licuado Platano-Fresa", "Licuado Platano-Choco", "Licuado Chocomil", "Jugo de naranja",
-        "Jugo verde", "Soda"]}
-    return render_template("pedidos.html", menu=menu_platillos, huevo_menu=platillos_con_huevo)
+    return render_template("pedidos.html", menu=menu, huevo_menu=platillos_con_huevo)
 
 @app.route('/historial')
 def historial():
@@ -99,7 +95,7 @@ def hacer_pedido():
             minutos = int(tiempo_entrega)
             tiempo_entrega_segundos = minutos * 60
         except:
-            tiempo_entrega_segundos = None
+            tiempo_entrega_segundos = 0
 
     items_seleccionados = request.form.getlist('item')
     conteo = defaultdict(int)
@@ -128,7 +124,7 @@ def hacer_pedido():
         "hora": datetime.now().strftime("%H:%M:%S"),
         "tipo": tipo_pedido,
         "tiempo_entrega": tiempo_entrega if tipo_pedido == "online" else None,
-        "tiempo_entrega_segundos": tiempo_entrega_segundos,
+        "tiempo_entrega_segundos": tiempo_entrega_segundos if tipo_pedido == "online" else None,
         "timestamp": int(time.time()) if tipo_pedido == "online" else None
     }
 
@@ -145,5 +141,6 @@ def marcar_entregado(pedido_id):
             break
     return redirect('/')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/check_nuevos')
+def check_nuevos():
+    return {"total": len(pendientes)}

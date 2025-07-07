@@ -3,20 +3,52 @@
 {% block title %}📚 Historial - Eggsquisitos{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4 text-gray-800">📚 Pedidos Entregados</h1>
+<h1 class="text-3xl font-bold mb-6 text-gray-800">📚 Pedidos Entregados</h1>
 
+{% if pedidos %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+    {% for pedido in pedidos %}
+    <div class="bg-white p-4 rounded-xl shadow border-l-4 border-green-500">
+      <h2 class="text-lg font-semibold text-gray-700 mb-1">🆔 Pedido ID: {{ pedido.id }}</h2>
+      <p class="text-sm text-gray-500">🕐 Entregado: {{ pedido.fecha_entrega }}</p>
+      <ul class="list-disc ml-6 mt-2 text-sm text-gray-700">
+        {% for item, cantidad in pedido.conteo.items() %}
+          <li>
+            {{ item }} x {{ cantidad }}
+            {% if pedido.huevos and item in pedido.huevos %}
+              - <em>{{ pedido.huevos[item] | join(', ') }}</em>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      {% if pedido.notas %}
+        <p class="text-sm mt-2 text-gray-700"><strong>Notas:</strong> {{ pedido.notas }}</p>
+      {% endif %}
+      <p class="text-sm mt-2 font-semibold text-green-600">💰 Total: ${{ pedido.total }} MXN</p>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-center bg-yellow-100 border border-yellow-300 text-yellow-800 rounded p-4 shadow">
+    No hay pedidos entregados aún.
+  </div>
+{% endif %}
+
+<!-- Botón para mostrar reportes -->
 <div class="flex justify-center mb-6">
-  <button id="btnReportes" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow">
+  <button id="btnReportes" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow transition">
     📊 Mostrar Reportes
   </button>
 </div>
 
 <!-- Reportes -->
-<div id="reportes" class="hidden transition-opacity duration-500 opacity-0 space-y-6">
+<div id="reportes" class="hidden transition-opacity duration-500 opacity-0 space-y-10">
+
+  <!-- Gráficas de pedidos y ganancias -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- Pedidos por Día -->
-    <div class="bg-white p-4 rounded shadow">
-      <div class="flex justify-between items-center mb-2">
+    <div class="bg-white p-5 rounded-xl shadow">
+      <div class="flex justify-between items-center mb-3">
         <h2 class="text-lg font-semibold text-gray-700">📈 Pedidos por Día</h2>
         <span class="text-sm bg-blue-100 text-blue-800 px-2 py-0.5 rounded">🧾 Total: {{ total_pedidos }}</span>
       </div>
@@ -24,8 +56,8 @@
     </div>
 
     <!-- Ganancias por Día -->
-    <div class="bg-white p-4 rounded shadow">
-      <div class="flex justify-between items-center mb-2">
+    <div class="bg-white p-5 rounded-xl shadow">
+      <div class="flex justify-between items-center mb-3">
         <h2 class="text-lg font-semibold text-gray-700">💰 Ganancias por Día</h2>
         <span class="text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded">💰 ${{ total_ganancias }} MXN</span>
       </div>
@@ -34,110 +66,65 @@
   </div>
 
   <!-- Platillos más pedidos -->
-  <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-lg font-semibold text-gray-700 mb-2">🍳 Platillos más pedidos</h2>
-    <canvas id="graficoPlatillos" height="200"></canvas>
+  <div class="bg-white p-5 rounded-xl shadow">
+    <h2 class="text-lg font-semibold text-gray-700 mb-3">🍳 Platillos más vendidos</h2>
+    <canvas id="graficoPlatillos" height="250"></canvas>
   </div>
-</div>
-
-<!-- Historial de pedidos -->
-<div class="mt-8 space-y-4">
-  {% if pedidos %}
-    {% for pedido in pedidos %}
-      <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-        <h2 class="text-md font-semibold text-gray-700 mb-1">
-          Pedido ID: {{ pedido.id }} <span class="ml-2 text-green-700 text-sm">✅ Entregado</span>
-        </h2>
-        <p class="text-sm text-gray-600 mb-1">🕒 <strong>Entregado el:</strong> {{ pedido.fecha_entrega }}</p>
-        <ul class="list-disc ml-6 text-sm text-gray-700">
-          {% for item, cantidad in pedido.conteo.items() %}
-            <li>
-              {{ item }} x {{ cantidad }}
-              {% if pedido.huevos and item in pedido.huevos %}
-                - <em>{{ pedido.huevos[item] | join(', ') }}</em>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-        {% if pedido.notas %}
-          <p class="text-sm mt-2 text-gray-700"><strong>Notas:</strong> {{ pedido.notas }}</p>
-        {% endif %}
-        <p class="text-sm mt-2 font-semibold text-gray-800">💵 Total: ${{ pedido.total }} MXN</p>
-      </div>
-    {% endfor %}
-  {% else %}
-    <div class="bg-yellow-100 text-yellow-800 p-4 rounded text-lg shadow">
-      Aún no se ha entregado ningún pedido.
-    </div>
-  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const reportes = document.getElementById("reportes");
-  const boton = document.getElementById("btnReportes");
+  document.getElementById("btnReportes").addEventListener("click", function () {
+    const reportes = document.getElementById("reportes");
+    reportes.classList.toggle("hidden");
+    setTimeout(() => reportes.classList.toggle("opacity-0"), 50);
+  });
 
-  boton.addEventListener("click", () => {
-    if (reportes.classList.contains("hidden")) {
-      reportes.classList.remove("hidden");
-      setTimeout(() => reportes.classList.add("opacity-100"), 10);
-      boton.textContent = "❌ Ocultar Reportes";
-      dibujarGraficas();
-    } else {
-      reportes.classList.remove("opacity-100");
-      setTimeout(() => reportes.classList.add("hidden"), 500);
-      boton.textContent = "📊 Mostrar Reportes";
+  const pedidosPorDia = {{ pedidos_por_dia | tojson }};
+  const gananciasPorDia = {{ ganancias_por_dia | tojson }};
+  const platillos = {{ platillos_mas_pedidos | tojson }};
+
+  const ctx1 = document.getElementById('graficoPedidos').getContext('2d');
+  new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: pedidosPorDia.map(d => d[0]),
+      datasets: [{
+        label: 'Pedidos',
+        data: pedidosPorDia.map(d => d[1]),
+        backgroundColor: 'rgba(59, 130, 246, 0.7)'
+      }]
     }
   });
 
-  function dibujarGraficas() {
-    new Chart(document.getElementById("graficoPedidos"), {
-      type: "bar",
-      data: {
-        labels: {{ pedidos_por_dia | map(attribute=0) | list | tojson }},
-        datasets: [{
-          label: "Pedidos",
-          backgroundColor: "#60a5fa",
-          data: {{ pedidos_por_dia | map(attribute=1) | list | tojson }}
-        }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
+  const ctx2 = document.getElementById('graficoGanancias').getContext('2d');
+  new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels: gananciasPorDia.map(d => d[0]),
+      datasets: [{
+        label: 'Ganancias MXN',
+        data: gananciasPorDia.map(d => d[1]),
+        borderColor: 'rgba(16, 185, 129, 1)',
+        fill: false
+      }]
+    }
+  });
 
-    new Chart(document.getElementById("graficoGanancias"), {
-      type: "bar",
-      data: {
-        labels: {{ ganancias_por_dia | map(attribute=0) | list | tojson }},
-        datasets: [{
-          label: "Ganancias (MXN)",
-          backgroundColor: "#34d399",
-          data: {{ ganancias_por_dia | map(attribute=1) | list | tojson }}
-        }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    new Chart(document.getElementById("graficoPlatillos"), {
-      type: "bar",
-      data: {
-        labels: {{ platillos_mas_pedidos | map(attribute=0) | list | tojson }},
-        datasets: [{
-          label: "Veces Pedido",
-          backgroundColor: "#facc15",
-          data: {{ platillos_mas_pedidos | map(attribute=1) | list | tojson }}
-        }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
-  }
+  const ctx3 = document.getElementById('graficoPlatillos').getContext('2d');
+  new Chart(ctx3, {
+    type: 'pie',
+    data: {
+      labels: platillos.map(p => p[0]),
+      datasets: [{
+        label: 'Más vendidos',
+        data: platillos.map(p => p[1]),
+        backgroundColor: [
+          '#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa',
+          '#f472b6', '#c084fc', '#38bdf8', '#fb923c', '#4ade80'
+        ]
+      }]
+    }
+  });
 </script>
 {% endblock %}
