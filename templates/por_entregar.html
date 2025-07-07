@@ -10,7 +10,7 @@
 {% if pedidos %}
   <div id="lista-pedidos" class="grid grid-cols-1 md:grid-cols-2 gap-4" data-total="{{ pedidos|length }}">
     {% for pedido in pedidos %}
-      <div class="pedido-item" draggable="true" data-pedido-id="{{ pedido.id }}">
+      <div class="pedido-item touch-draggable" draggable="true" data-pedido-id="{{ pedido.id }}">
         <div class="bg-white p-4 rounded-lg shadow hover:shadow-md transition border-l-4 {% if pedido.tipo == 'online' %}border-blue-500{% else %}border-yellow-500{% endif %}">
           <div class="flex justify-between items-start">
             <h2 class="text-lg font-semibold text-gray-700">
@@ -66,75 +66,31 @@
   </div>
 {% endif %}
 
-<!-- Notificación sonora si hay nuevo pedido online -->
+<!-- 🔊 Notificación de nuevo pedido -->
 <script>
-  const listaPedidos = document.getElementById('lista-pedidos');
   const audio = document.getElementById('notificacion-audio');
 
-  let pedidosPrevios = parseInt(localStorage.getItem("totalPedidosOnline")) || 0;
-  let pedidosActuales = 0;
+  function actualizarPedidos() {
+    fetch(location.href, { cache: "no-store" })
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const nuevoDoc = parser.parseFromString(html, "text/html");
+        const nuevaLista = nuevoDoc.getElementById("lista-pedidos");
+        const actualLista = document.getElementById("lista-pedidos");
 
-  // Contar solo pedidos online
-  document.querySelectorAll('.pedido-item').forEach(el => {
-    if (el.querySelector('.bg-blue-100')) {
-      pedidosActuales++;
-    }
-  });
-
-  if (pedidosActuales > pedidosPrevios) {
-    audio.play().catch(() => {});
+        if (nuevaLista && actualLista && nuevaLista.dataset.total !== actualLista.dataset.total) {
+          actualLista.innerHTML = nuevaLista.innerHTML;
+          audio.play().catch(() => {});
+          localStorage.setItem("totalPedidosOnline", nuevaLista.dataset.total);
+        }
+      });
   }
 
-  localStorage.setItem("totalPedidosOnline", pedidosActuales);
+  setInterval(actualizarPedidos, 5000); // Actualiza cada 5 seg
 </script>
 
-<!-- Drag & drop -->
-<script>
-  const lista = document.getElementById('lista-pedidos');
-  let draggedItem = null;
-
-  lista.addEventListener('dragstart', (e) => {
-    if (e.target.classList.contains('pedido-item')) {
-      draggedItem = e.target;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', draggedItem.dataset.pedidoId);
-      setTimeout(() => draggedItem.classList.add('opacity-50'), 0);
-    }
-  });
-
-  lista.addEventListener('dragend', () => {
-    if (draggedItem) {
-      draggedItem.classList.remove('opacity-50');
-      draggedItem = null;
-    }
-  });
-
-  lista.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(lista, e.clientY);
-    const dragging = document.querySelector('.pedido-item.opacity-50');
-    if (afterElement == null) {
-      lista.appendChild(dragging);
-    } else {
-      lista.insertBefore(dragging, afterElement);
-    }
-  });
-
-  function getDragAfterElement(container, y) {
-    const elements = [...container.querySelectorAll('.pedido-item:not(.opacity-50)')];
-    return elements.reduce((closest, el) => {
-      const box = el.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) {
-        return { offset, element: el };
-      } else {
-        return closest;
-      }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-  }
-</script>
-
-<!-- Cronómetro -->
+<!-- 🕘 Cronómetro -->
 <script>
   function formatoTiempo(segundos) {
     const hrs = Math.floor(segundos / 3600).toString().padStart(2, '0');
@@ -170,5 +126,71 @@
 
   setInterval(actualizarCronometros, 1000);
   actualizarCronometros();
+</script>
+
+<!-- 🟨 Drag & Drop + soporte táctil -->
+<script>
+  const lista = document.getElementById('lista-pedidos');
+  let draggedItem = null;
+  let startY = 0;
+
+  function swapElements(a, b) {
+    const parent = a.parentNode;
+    const sibling = b.nextSibling === a ? b : b.nextSibling;
+    parent.insertBefore(a, sibling);
+  }
+
+  lista.addEventListener('dragstart', (e) => {
+    if (e.target.classList.contains('pedido-item')) {
+      draggedItem = e.target;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => draggedItem.classList.add('opacity-50'), 0);
+    }
+  });
+
+  lista.addEventListener('dragend', () => {
+    if (draggedItem) draggedItem.classList.remove('opacity-50');
+    draggedItem = null;
+  });
+
+  lista.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const after = getDragAfterElement(lista, e.clientY);
+    const dragging = document.querySelector('.pedido-item.opacity-50');
+    if (after == null) lista.appendChild(dragging);
+    else lista.insertBefore(dragging, after);
+  });
+
+  function getDragAfterElement(container, y) {
+    const els = [...container.querySelectorAll('.pedido-item:not(.opacity-50)')];
+    return els.reduce((closest, el) => {
+      const box = el.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      return offset < 0 && offset > closest.offset ? { offset, element: el } : closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  // Táctil para móvil
+  lista.addEventListener("touchstart", (e) => {
+    const el = e.target.closest(".pedido-item");
+    if (!el) return;
+    draggedItem = el;
+    startY = e.touches[0].clientY;
+    el.classList.add("opacity-50");
+  });
+
+  lista.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+    const target = el?.closest(".pedido-item");
+    if (target && draggedItem && target !== draggedItem) {
+      swapElements(draggedItem, target);
+    }
+  }, { passive: false });
+
+  lista.addEventListener("touchend", () => {
+    if (draggedItem) draggedItem.classList.remove("opacity-50");
+    draggedItem = null;
+  });
 </script>
 {% endblock %}

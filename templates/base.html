@@ -70,5 +70,27 @@
       mobileMenu.classList.toggle('hidden');
     });
   </script>
+  <script>
+  function actualizarPedidos() {
+    fetch(location.href, { cache: "no-store" })
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const nuevoDoc = parser.parseFromString(html, "text/html");
+        const nuevaLista = nuevoDoc.getElementById("lista-pedidos");
+        const actualLista = document.getElementById("lista-pedidos");
+
+        if (nuevaLista && actualLista && nuevaLista.dataset.total !== actualLista.dataset.total) {
+          actualLista.innerHTML = nuevaLista.innerHTML;
+          localStorage.setItem("totalPedidosOnline", nuevaLista.dataset.total);
+          const audio = document.getElementById("notificacion-audio");
+          audio.play().catch(() => {});
+        }
+      });
+  }
+
+  setInterval(actualizarPedidos, 5000); // cada 5 segundos
+</script>
+
 </body>
 </html>
